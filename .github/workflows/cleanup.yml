@@ -22,7 +22,9 @@ jobs:
             ids=$(gh run list --repo "$REPO" --workflow "$wf" --limit 100 \
               --json databaseId,status \
               --jq '.[] | select(.status != "queued" and .status != "in_progress" and .status != "action_required") | .databaseId')
-            total=$(printf '%s\n' "$ids" | grep -c .)
+            # grep -c exits 1 on zero matches (e.g. this workflow's only run
+            # is itself, still in progress) — must not fail the step.
+            total=$(printf '%s\n' "$ids" | grep -c . || true)
             echo "found $total deletable run(s)"
             if [ "$total" -le 1 ]; then
               echo "nothing to delete"
