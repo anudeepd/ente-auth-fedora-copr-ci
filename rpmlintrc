@@ -1,0 +1,28 @@
+# GUI app; upstream ships no man page, and the desktop metadata + doc-free
+# payload are intentional for this COPR rewrap.
+addFilter("no-manual-page-for-binary")
+addFilter("no-documentation")
+# /usr/bin/enteauth is a symlink to the true ELF in /usr/share/enteauth;
+# rpmlint flags the mismatch between desktop file target and added binary.
+addFilter("desktopfile-without-binary")
+
+# The prebuilt upstream binaries carry .symtab (unstripped) by design; see
+# the rationale next to %global debug_package %{nil} in specs/enteauth.spec.
+addFilter("unstripped-binary-or-object")
+# "authenticator", "rewraps" and "prebuilt" appear in %description;
+# rpmlint's dictionary has no entry for them.
+addFilter("spelling-error .*authenticator")
+addFilter("spelling-error .*rewraps")
+addFilter("spelling-error .*prebuilt")
+# Upstream's Flutter plugin libs under /usr/share/enteauth/lib are private
+# (loaded via $ORIGIN RUNPATHs, not the system loader path): no SONAME,
+# no exec bit, and $ORIGIN RUNPATHs are all by design and required for the
+# app to find its bundled libs. Modes and layout are kept as upstream ships
+# them; moving the arch-specific files out of /usr/share would break
+# $ORIGIN-relative loading.
+addFilter("shared-library-not-executable")
+addFilter("no-soname")
+addFilter("invalid-soname")
+addFilter("missing-gnu-hash-section")
+addFilter("binary-or-shlib-defines-rpath")
+addFilter("arch-dependent-file-in-usr-share")
