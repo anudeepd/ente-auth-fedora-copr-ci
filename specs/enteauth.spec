@@ -52,7 +52,15 @@ Requires:       polkit
 # does not link) would otherwise pull a libjvm.so requirement, dragging in
 # a full JVM. Upstream's own RPM declares no such requirement and runs fine
 # without it, so exclude it to keep the install footprint at parity.
-%global __requires_exclude ^libjvm\\.so
+#
+# The versioned libcurl requirement is excluded too: the bundled libsentry
+# was built against a curl carrying CURL_OPENSSL_4 symbols, which nothing
+# in Fedora provides (F44 curl has no CURL_OPENSSL_* versioned soname at
+# all). The unversioned libcurl.so.4 requirement stays, so dnf still pulls
+# libcurl — and every symbol sentry needs exists there (the loader binds
+# them with a harmless "no version information available" warning, exactly
+# as with the upstream RPM, which declares no deps at all).
+%global __requires_exclude ^libjvm\\.so|^libcurl\\.so\\.4\\(CURL_OPENSSL_4\\)
 
 %description
 Ente Auth is a free, open-source, end-to-end encrypted 2FA authenticator.

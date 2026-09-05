@@ -59,7 +59,10 @@ Everything else follows the guidelines:
   `libsecret` (auto-detected) and `sqlite-libs` (bundled, unlinked).
   One auto-detected dep is excluded: `libjvm.so` (via the unused
   `libdartjni.so` JNI bridge) would drag in a full JVM that upstream
-  itself doesn't require. No network access inside the buildroot.
+  itself doesn't require. The versioned
+  `libcurl.so.4(CURL_OPENSSL_4)` requirement is excluded too (nothing in
+  Fedora provides it; the unversioned `libcurl.so.4` dep stays and every
+  needed symbol resolves). No network access inside the buildroot.
 - The downloaded RPM is verified against the SHA256SUMS published with the
   upstream release before submission to COPR.
 
