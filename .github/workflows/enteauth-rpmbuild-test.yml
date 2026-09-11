@@ -12,10 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:44
     steps:
+      # fedora:44 ships no git, so actions/checkout would silently fall back to
+      # downloading a source tarball and leave no .git behind.
+      - name: Install git
+        run: sudo dnf install -y -q git
       - name: Checkout local
         uses: actions/checkout@v6.0.2
         with:
           repository: ${{ github.repository }}
+      # Steps run as root inside the container while the bind-mounted workspace
+      # is owned by the runner user (uid 1001), so git rejects the repository as
+      # dubiously owned. actions/checkout only records safe.directory in a
+      # temporary global config that it reverts.
+      - name: Mark workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install dependencies
         run: sudo dnf install -y -q git gawk jq curl rpm-build rpmdevtools cpio desktop-file-utils appstream rpmlint chrpath binutils
       - name: Get latest auth version
