@@ -2,9 +2,10 @@
 # payload are intentional for this COPR rewrap.
 addFilter("no-manual-page-for-binary")
 addFilter("no-documentation")
-# /usr/bin/enteauth is a symlink to the true ELF in /usr/share/enteauth;
-# rpmlint flags the mismatch between desktop file target and added binary.
-addFilter("desktopfile-without-binary")
+# /usr/bin/enteauth is a symlink to the true ELF in /usr/share/enteauth.
+# (An older rpmlint flagged the desktop-file/binary mismatch as
+# desktopfile-without-binary; rpmlint 2.8.0 no longer fires it, and an
+# unused filter is itself an error, so no filter is kept for it.)
 
 # The prebuilt upstream binaries carry .symtab (unstripped) by design; see
 # the rationale next to %global debug_package %{nil} in specs/enteauth.spec.
