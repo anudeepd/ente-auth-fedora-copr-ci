@@ -127,9 +127,16 @@ appstreamcli validate --no-net %{buildroot}%{_metainfodir}/io.ente.auth.metainfo
 %{_datadir}/pixmaps/io.ente.auth.png
 %{_datadir}/polkit-1/actions/com.ente.auth.policy
 %{_metainfodir}/io.ente.auth.metainfo.xml
-# Release is %%autorelease: COPR's rpmautospec sets it to the changelog entry
-# count. To rebuild the same upstream version with a spec change, append a new
-# %%changelog entry — Release bumps automatically and the NVR stays unique.
+# Release is %%autorelease. COPR builds this repo from an uploaded SRPM, where
+# rpm's plain %%autorelease fallback applies: the release is a literal 1 plus
+# the chroot's dist tag, NOT the changelog entry count (verified against the
+# published builds: iloader's 2.3.3-1 was built from a spec with three
+# changelog entries, and the only unique NVRs any of these projects ever
+# published came from the CI's force_build path). A %%changelog entry therefore
+# documents a spec change but does not on its own give an already-built
+# upstream version a new NVR — publish it with the force_build workflow input,
+# which rewrites Release to %%{autorelease}.f<run_id> (a unique, higher
+# release), exactly as the earlier forced builds in these projects did.
 
 %changelog
 * Sat Sep 12 2026 Anudeep D <anudeepd2@gmail.com> - 4.4.25-2
