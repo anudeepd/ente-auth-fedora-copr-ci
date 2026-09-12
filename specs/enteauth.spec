@@ -1,12 +1,28 @@
-# Prebuilt foreign binary: no build-id or debuginfo can be produced, and
-# disabling the debug package also skips brp-strip, which would otherwise
-# rewrite the upstream blob. The binary ships as-is from the release RPM.
+# Prebuilt foreign binary: no build-id or debuginfo can be produced, so the
+# debug package is disabled. The binary ships as-is from the release RPM.
 %global debug_package %{nil}
 
+# NOTE (verified by local rpmbuild): %%global debug_package %%{nil} is what
+# makes the default ELF-rewriting brp hooks run, not what skips them —
+# Fedora's %%__os_install_post gates brp-strip / brp-strip-comment-note on
+# %%__debug_package being *undefined*. With them in place the payload's ELF
+# files get rewritten (verified for 4.4.25: the packaged enteauth binary and
+# the bundled lib*.so files stopped matching upstream), so the payload stops
+# matching outside the documented chrpath delta. brp-strip-lto and
+# brp-strip-static-archive are not gated at all. Empty all four so the only
+# remaining differences from the upstream RPM are the intended ones. Set them
+# to %%{nil} rather than %%undefine'ing them: with rpm 6.0.2 %%undefine does
+# not mask brp-strip / brp-strip-comment-note (verified — the hooks still ran,
+# while %%undefine on the lto one did take effect).
+%global __brp_strip %{nil}
+%global __brp_strip_comment_note %{nil}
+%global __brp_strip_lto %{nil}
+%global __brp_strip_static_archive %{nil}
+
 # add-determinism's brp hook (add-det) would regenerate /usr/lib/.build-id
-# links from the blob's ELF build-id notes and otherwise normalize the
-# payload. The blob must ship byte-identical, so unset the hook (consistent
-# with %%global debug_package %%{nil} above).
+# links from the payload's ELF build-id notes and otherwise normalize the
+# payload. The payload must ship byte-identical apart from the documented
+# deltas, so unset the hook.
 %undefine __brp_add_determinism
 
 Name:           enteauth
@@ -116,5 +132,10 @@ appstreamcli validate --no-net %{buildroot}%{_metainfodir}/io.ente.auth.metainfo
 # %%changelog entry — Release bumps automatically and the NVR stays unique.
 
 %changelog
+* Sat Sep 12 2026 Anudeep D <anudeepd2@gmail.com> - 4.4.25-2
+- Keep the payload matching upstream apart from the documented deltas: unset
+  Fedora's ELF-rewriting brp hooks (brp-strip, brp-strip-comment-note,
+  brp-strip-lto, brp-strip-static-archive) which drop .comment from every
+  bundled binary
 * Sat Sep 05 2026 Anudeep D <anudeepd2@gmail.com> - 4.4.25-1
 - Initial Fedora repackaging of upstream prebuilt RPM

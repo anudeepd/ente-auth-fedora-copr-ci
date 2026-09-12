@@ -56,6 +56,27 @@ jobs:
           spectool -g -R enteauth.spec
           rpmbuild -ba enteauth.spec 2>&1 | tail -15
           ls -lh $HOME/rpmbuild/RPMS/x86_64/
+      - name: Verify the payload matches upstream except the documented deltas
+        run: |
+          # The contract is that the RPM payload ships as upstream built it; the
+          # only intended deltas are the %prep chrpath RUNPATH removal and the
+          # dropped .build-id links / upstream appdata. Fedora's default brp
+          # hooks rewrite any ELF they see, so without this check a silent macro
+          # change would only show up as a quietly different binary.
+          upstream=$(ls $HOME/rpmbuild/SOURCES/ente-auth-v*-x86_64.rpm | head -1)
+          built=$(ls $HOME/rpmbuild/RPMS/x86_64/enteauth-*.rpm | grep -v debug | head -1)
+          rm -rf /tmp/payload-upstream /tmp/payload-built
+          mkdir -p /tmp/payload-upstream /tmp/payload-built
+          (cd /tmp/payload-upstream && rpm2cpio "$upstream" | cpio -idm --quiet)
+          (cd /tmp/payload-built && rpm2cpio "$built" | cpio -idm --quiet)
+          # Only the files the %prep chrpath loop touches may differ in content.
+          drift=$(diff -rq /tmp/payload-upstream /tmp/payload-built 2>&1 | grep ' differ$' | grep -vE '/usr/share/enteauth/lib/' || true)
+          if [ -n "$drift" ]; then
+            echo "ERROR: payload drifted from upstream:"
+            printf '%s\n' "$drift"
+            exit 1
+          fi
+          echo "### Payload matches upstream except the documented deltas :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
       - name: Inspect built RPM Requires
         run: |
           rpm_file=$(ls $HOME/rpmbuild/RPMS/x86_64/enteauth-*.x86_64.rpm | grep -v debug | head -1)

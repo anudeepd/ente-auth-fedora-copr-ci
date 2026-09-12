@@ -35,11 +35,17 @@ Everything else follows the guidelines:
   `LICENSE`/RPM (`AGPLv3`). Nothing else is bundled: upstream payload plus
   license and curated metainfo.
 - `%global debug_package %{nil}` with an explicit rationale: the prebuilt
-  foreign binary cannot produce debuginfo, and disabling the debug package
-  also skips `brp-strip`, which would otherwise rewrite the upstream blob.
-  The foreign `.build-id` carried by the upstream RPM is dropped, and the
-  `add-det` brp hook is disabled, for the same reason: the blob must ship
-  byte-identical.
+  foreign binary cannot produce debuginfo, so the debug package is meaningless
+  for a rewrap. Note that this is what *enables* Fedora's ELF-rewriting brp
+  hooks rather than skipping them: `%__os_install_post` gates `brp-strip` and
+  `brp-strip-comment-note` on `%__debug_package` being undefined, and with
+  them active the payload's ELF files get rewritten (verified: the packaged
+  `enteauth` binary and the bundled `lib*.so` files no longer matched
+  upstream).
+  `brp-strip-lto` and `brp-strip-static-archive` are not gated at all. All
+  four hooks plus `add-det` are emptied in the spec, so the only remaining
+  differences from the upstream RPM are the documented `chrpath` and
+  `.build-id` deltas — and the RPM build test workflow checks exactly that.
 - One minimal, documented transformation: upstream's Flutter plugin libs
   bake in a `RUNPATH` pointing at the GitHub Actions build workspace
   (`/home/runner/work/...`), which cannot exist on user machines and fails
